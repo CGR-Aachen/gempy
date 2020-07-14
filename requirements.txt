@@ -8,3 +8,4 @@ networkx
 scikit-image>=0.17
 pyvista
 iPython
+scikit-learn

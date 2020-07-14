@@ -10,6 +10,7 @@ from gempy.core.data import Surfaces, Grid
 from gempy.core.checkers import check_for_nans
 from gempy.utils import docstring as ds
 from gempy.utils.meta import _setdoc_pro, _setdoc
+from gempy.utils.transformations import rescale_surface_points, compute_centers, compute_max_rescaling_factor, compute_rescaling_factor
 
 
 @_setdoc_pro(Surfaces.__doc__)
@@ -994,13 +995,11 @@ class RescaledData(object):
 
         Args:
             attribute (str): Attribute to be modified. It can be: centers, rescaling factor
+            value (float, list[float]):
                 * centers: [s0]
                 * rescaling factor: [s1]
-            value (float, list[float])
-
 
         Returns:
-            :class:`gempy.core.data_modules.geometric_data.Rescaling`
 
         """
         assert np.isin(attribute, self.df.columns).all(), 'Valid attributes are: ' + np.array2string(self.df.columns)
@@ -1017,9 +1016,7 @@ class RescaledData(object):
         else:
             self.df.loc['values', attribute] = value
 
-        return self
-
-    @_setdoc_pro([ds.centers, ds.rescaling_factor])
+    @_setdoc_pro([ds.rescaling_factor, ds.centers])
     def rescale_data(self, rescaling_factor=None, centers=None):
         """
         Rescale inplace: surface_points, orientations---adding columns in the categories_df---and grid---adding values_r
@@ -1118,7 +1115,7 @@ class RescaledData(object):
             max_coord, min_coord = self.max_min_coord(surface_points, orientations)
 
         # Get the centers of every axis
-        centers = ((max_coord + min_coord) / 2).astype(float).values
+        centers = compute_centers(max_coord, min_coord)
         if inplace is True:
             self.df.at['values', 'centers'] = centers
         return centers
@@ -1146,7 +1143,7 @@ class RescaledData(object):
 
         if max_coord is None or min_coord is None:
             max_coord, min_coord = self.max_min_coord(surface_points, orientations)
-        rescaling_factor_val = (2 * np.max(max_coord - min_coord))
+        rescaling_factor_val = compute_rescaling_factor(max_coord, min_coord)
         if inplace is True:
             self.df['rescaling factor'] = rescaling_factor_val
         return rescaling_factor_val
@@ -1157,7 +1154,7 @@ class RescaledData(object):
 
     @staticmethod
     @_setdoc_pro([SurfacePoints.__doc__, compute_data_center.__doc__, compute_rescaling_factor.__doc__, ds.idx_sp])
-    def rescale_surface_points(surface_points, rescaling_factor, centers, idx: list = None):
+    def rescale_surface_points(surface_points, rescaling_factor, centers, idx: list = None, offset: float = 0.5001):
         """
         Rescale inplace: surface_points. The rescaled values will get stored on the linked objects.
 
@@ -1166,6 +1163,7 @@ class RescaledData(object):
             rescaling_factor: [s2]
             centers: [s1]
             idx (int, list of int): [s3]
+            offset: ???
 
         Returns:
 
@@ -1175,9 +1173,8 @@ class RescaledData(object):
             idx = surface_points.df.index
 
         # Change the coordinates of surface_points
-        new_coord_surface_points = (surface_points.df.loc[idx, ['X', 'Y', 'Z']] -
-                                    centers) / rescaling_factor + 0.5001
-
+        XYZ = surface_points.df.loc[idx, ['X', 'Y', 'Z']]
+        new_coord_surface_points = rescale_surface_points(XYZ, centers, rescaling_factor, offset=offset)
         new_coord_surface_points.rename(columns={"X": "X_r", "Y": "Y_r", "Z": 'Z_r'}, inplace=True)
         return new_coord_surface_points
 
@@ -1197,24 +1194,27 @@ class RescaledData(object):
         idx = np.atleast_1d(idx)
 
         self.surface_points.df.loc[idx, ['X_r', 'Y_r', 'Z_r']] = self.rescale_surface_points(
-            self.surface_points, self.df.loc['values', 'rescaling factor'], self.df.loc['values', 'centers'], idx=idx)
+            self.surface_points,
+            self.df.loc['values', 'rescaling factor'],
+            self.df.loc['values', 'centers'],
+            idx=idx)
 
         return self.surface_points
 
-    def rescale_data_point(self, data_points: np.ndarray, rescaling_factor=None, centers=None):
+    def rescale_data_point(self, data_points: np.ndarray, rescaling_factor=None, centers=None, offset: float = 0.5001):
         """This method now is very similar to set_rescaled_surface_points passing an index"""
         if rescaling_factor is None:
             rescaling_factor = self.df.loc['values', 'rescaling factor']
         if centers is None:
             centers = self.df.loc['values', 'centers']
 
-        rescaled_data_point = (data_points - centers) / rescaling_factor + 0.5001
+        rescaled_data_point = rescale_surface_points(data_points, centers, rescaling_factor, offset=offset)
 
         return rescaled_data_point
 
     @staticmethod
     @_setdoc_pro([Orientations.__doc__, compute_data_center.__doc__, compute_rescaling_factor.__doc__, ds.idx_sp])
-    def rescale_orientations(orientations, rescaling_factor, centers, idx: list = None):
+    def rescale_orientations(orientations, rescaling_factor, centers, idx: list = None, offset: float = 0.5001):
         """
         Rescale inplace: surface_points. The rescaled values will get stored on the linked objects.
 
@@ -1223,6 +1223,7 @@ class RescaledData(object):
             rescaling_factor: [s2]
             centers: [s1]
             idx (int, list of int): [s3]
+            offset: ???
 
         Returns:
 
@@ -1231,8 +1232,8 @@ class RescaledData(object):
             idx = orientations.df.index
 
         # Change the coordinates of orientations
-        new_coord_orientations = (orientations.df.loc[idx, ['X', 'Y', 'Z']] -
-                                  centers) / rescaling_factor + 0.5001
+        XYZ = orientations.df.loc[idx, ['X', 'Y', 'Z']]
+        new_coord_orientations = rescale_surface_points(XYZ, centers, rescaling_factor, offset=offset)
 
         new_coord_orientations.rename(columns={"X": "X_r", "Y": "Y_r", "Z": 'Z_r'}, inplace=True)
 
@@ -1258,10 +1259,18 @@ class RescaledData(object):
         return True
 
     @staticmethod
-    def rescale_grid(grid, rescaling_factor, centers: pn.DataFrame):
-        new_grid_extent = (grid.regular_grid.extent - np.repeat(centers, 2)) / rescaling_factor + 0.5001
-        new_grid_values = (grid.values - centers) / rescaling_factor + 0.5001
-        return new_grid_extent, new_grid_values,
+    def rescale_grid(grid, rescaling_factor, centers, offset: float = 0.5001):
+        """
+        Rescale the grid to to match the transformations of the data
+
+        Args:
+
+            offset: ???
+
+        """
+        new_grid_extent = rescale_surface_points(grid.regular_grid.extent, np.repeat(centers, 2), rescaling_factor, offset=offset)
+        new_grid_values = rescale_surface_points(grid.values, centers, rescaling_factor, offset=offset)
+        return new_grid_extent, new_grid_values
 
     def set_rescaled_grid(self):
         """
