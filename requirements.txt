@@ -9,4 +9,5 @@ scikit-image>=0.17
 pyvista # 0.24 and 0.25 compatible
 pyvistaqt # necessary for > 0.25
 iPython
+rasterio
 

@@ -3,7 +3,7 @@ from matplotlib.cm import ScalarMappable as SM
 from gempy.plot._visualization_2d import PlotData2D
 import numpy as np
 import os
-
+import rasterio as rio
 
 def export_geomap2geotiff(path, geo_model, geo_map=None, geotiff_filepath=None):
     """
@@ -17,7 +17,6 @@ def export_geomap2geotiff(path, geo_model, geo_map=None, geotiff_filepath=None):
     Returns:
         Saves the geological map as a geotiff to the given path.
     """
-    from osgeo import gdal
 
     plot = PlotData2D(geo_model)
     cmap = plot._cmap
@@ -26,41 +25,20 @@ def export_geomap2geotiff(path, geo_model, geo_map=None, geotiff_filepath=None):
     if geo_map is None:
         geo_map = geo_model.solutions.geological_map[0].reshape(geo_model._grid.topography.resolution)
 
-    if geotiff_filepath is None:
-        # call the other function
-        print('stupid')
-
-    # **********************************************************************
     geo_map_rgb = SM(norm=norm, cmap=cmap).to_rgba(geo_map.T) # r,g,b,alpha
-    # **********************************************************************
-    # gdal.UseExceptions()
-    ds = gdal.Open(geotiff_filepath)
-    band = ds.GetRasterBand(1)
-    arr = band.ReadAsArray()
-    [cols, rows] = arr.shape
 
-    outFileName = path
-    driver = gdal.GetDriverByName("GTiff")
-    options = ['PROFILE=GeoTiff', 'PHOTOMETRIC=RGB', 'COMPRESS=JPEG']
-    outdata = driver.Create(outFileName, rows, cols, 3, gdal.GDT_Byte, options=options)
-
-    outdata.SetGeoTransform(ds.GetGeoTransform())  # sets same geotransform as input
-    outdata.SetProjection(ds.GetProjection())  # sets same projection as input
-    outdata.GetRasterBand(1).WriteArray(geo_map_rgb[:, ::-1, 0].T * 256)
-    outdata.GetRasterBand(2).WriteArray(geo_map_rgb[:, ::-1, 1].T * 256)
-    outdata.GetRasterBand(3).WriteArray(geo_map_rgb[:, ::-1, 2].T * 256)
-    outdata.GetRasterBand(1).SetColorInterpretation(gdal.GCI_RedBand)
-    outdata.GetRasterBand(2).SetColorInterpretation(gdal.GCI_GreenBand)
-    outdata.GetRasterBand(3).SetColorInterpretation(gdal.GCI_BlueBand)
-    # outdata.GetRasterBand(4).SetColorInterpretation(gdal.GCI_AlphaBand)  # alpha band
-
-    # outdata.GetRasterBand(1).SetNoDataValue(999)##if you want these values transparent
-    outdata.FlushCache()  # saves to disk
-    outdata = None  # closes file (important)
-    band = None
-    ds = None
-
-    print("Successfully exported geological map to  " +path)
+    with rio.open(geotiff_filepath, 'r') as src:
+        profile = src.profile
+        profile.update(
+            count=3,
+            dtype=rio.uint8,
+            photometric="RGB"
+        )
+        with rio.open(path, 'w', **profile) as dst:
+            dst.write(geo_map_rgb[:, ::-1, 0].T * 256, 1)
+            dst.write(geo_map_rgb[:, ::-1, 1].T * 256, 2)
+            dst.write(geo_map_rgb[:, ::-1, 2].T * 256, 3)
+            
 
 def export_moose_input(geo_model, path=None, filename='geo_model_units_moose_input.i'):
     """

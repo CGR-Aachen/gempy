@@ -33,7 +33,7 @@ install:
   - source activate tenv
 
   # Installs from conda-forge
-  - conda install -c conda-forge python-graphviz
+  - conda install -c conda-forge python-graphviz rasterio
   - conda install -c conda-forge pip matplotlib ipython six pytest pytest-cov ipywidgets
   - conda install -c conda-forge recommonmark networkx panel setuptools mkl-service
 

@@ -5,35 +5,30 @@ Created on 16.04.2019
 
 @author: Elisa Heim
 """
-
+import logging
+logger = logging.getLogger('gempy')
 import numpy as np
 from scipy import fftpack
-import pandas as pn
-import os
 
-try:
-    from osgeo import gdal
-    GDAL_IMPORT = True
-except ImportError as e:
-    GDAL_IMPORT = False
-    print(e)
+
+import rasterio as rio
+from rasterio.vrt import WarpedVRT
+from rasterio.enums import Resampling
 
 import matplotlib.pyplot as plt
 
 
 class LoadDEMGDAL:
-    """Class to include height elevation data (e.g. DEMs) with the geological grid
-    """
+    """Class to include height elevation data (e.g. DEMs) with the geological grid """
+    dem: rio.DatasetReader
 
-    def __init__(self, path_dem, grid=None, extent=None, delete_temp=True):
+    def __init__(self, path_dem, grid=None, extent=None):
         """
         Args:
             path_dem: path where dem is stored. file format: GDAL raster formats
             if grid: cropped to geomodel extent
         """
-        if GDAL_IMPORT == False:
-            raise ImportError('Gdal package is not installed. No support for raster formats.')
-        self.dem = gdal.Open(path_dem)
+        self.dem = rio.open(path_dem)
 
         if isinstance(self.dem, type(None)):
             raise AttributeError('Raster file could not be opened {}. Check if the filepath is correct. If yes,'
@@ -41,7 +36,7 @@ class LoadDEMGDAL:
                 path_dem))
 
         try:
-            self.dem_zval = self.dem.ReadAsArray()
+            self.dem_zval = self.dem.read(1)
         except AttributeError:
             raise AttributeError('Filepath seems to be wrong.')
 
@@ -54,24 +49,18 @@ class LoadDEMGDAL:
             self.regular_grid_extent = grid.extent
             self.crop2grid()
         else:
-            print('pass geo_model to automatically crop the DEM to the grid extent')
-        print('depending on the size of the raster, this can take a while...')
+            logger.info('pass geo_model to automatically crop the DEM to the grid extent')
+        logger.info('depending on the size of the raster, this can take a while...')
         self.convert2xyz()
-
-        if delete_temp is True:
-            self.dem = None
-            os.remove('topo.xyz')
-            if os.path.exists('_cropped_DEM.tif'):
-                os.remove('_cropped_DEM.tif')
 
     def _get_raster_dimensions(self):
         """calculates DEM extent, resolution, and max. z extent (d_z)"""
-        ulx, xres, xskew, uly, yskew, yres = self.dem.GetGeoTransform()
+        ulx, xres, xskew, uly, yskew, yres = self.dem.transform.to_gdal()
         z = self.dem_zval
         if np.any(np.array([xskew, yskew])) != 0:
-            print('DEM is not north-oriented.')
-        lrx = ulx + (self.dem.RasterXSize * xres)
-        lry = uly + (self.dem.RasterYSize * yres)
+            logger.info('DEM is not north-oriented.')
+        lrx = ulx + (self.dem.res[0] * xres)
+        lry = uly + (self.dem.res[0] * yres)
         self.resolution = np.array([(uly - lry) / (-yres), (lrx - ulx) / xres]).astype(int)
         self.extent = np.array([ulx, lrx, lry, uly]).astype(int)
         self.d_z = np.array([z.min(), z.max()])
@@ -80,32 +69,25 @@ class LoadDEMGDAL:
         return self.values_3D
 
     def info(self):
-        ulx, xres, xskew, uly, yskew, yres = self.dem.GetGeoTransform()
-        print('raster extent:  {}\n raster resolution: {}\n Pixel X size {}, Pixel Y size {}'.format(
+        ulx, xres, xskew, uly, yskew, yres = self.dem.transform.to_gdal()
+        logger.info('raster extent:  {}\n raster resolution: {}\n Pixel X size {}, Pixel Y size {}'.format(
             self.extent, self.resolution, xres, yres))
         plt.imshow(self.dem_zval, extent=self.extent)  # plot raster as image
         plt.colorbar()
 
-    def crop2grid(self, delete_temp=True):
+    def crop2grid(self):
         """
         Crops raster to extent of the geomodel grid.
         """
         cornerpoints_geo = self._get_cornerpoints(self.regular_grid_extent)
         cornerpoints_dtm = self._get_cornerpoints(self.extent)
-
-        # self.check()
-
         if np.any(cornerpoints_geo[:2] - cornerpoints_dtm[:2]) != 0:
-            path_dest = '_cropped_DEM.tif'
-            new_bounds = (self.regular_grid_extent[[0, 2, 1, 3]])
-            gdal.Warp(path_dest, self.dem, options=gdal.WarpOptions(
-                options=['outputBounds'], outputBounds=new_bounds))
-
-            self.dem = gdal.Open(path_dest)
-            self.dem_zval = self.dem.ReadAsArray()
+            new_bounds = self.regular_grid_extent[[0, 2, 1, 3]]
+            crs = self.dem.crs
+            self.dem = WarpedVRT(self.dem, crs=crs, resampling=Resampling.cubic, outputBounds=new_bounds)
+            self.dem_zval = self.dem.read()
             self._get_raster_dimensions()
-
-        print('Cropped raster to geo_model.grid.extent.')
+        logger.info('Cropped raster to geo_model.grid.extent.')
 
     def check(self):
         # TODO make this usable
@@ -121,48 +103,24 @@ class LoadDEMGDAL:
             plt.legend(frameon=True, loc='upper left')
             raise AssertionError('The model extent is too different from the raster extent.')
 
-    def convert2xyz(self, del_temp=True):
+    def convert2xyz(self):
         """
         Translates the gdal raster object to a numpy array of xyz coordinates.
         """
-        path_dest = 'topo.xyz'
-        print('storing converted file...')
         shape = self.dem_zval.shape
         if len(shape) == 3:
             shape = shape[1:]
-        gdal.Translate(path_dest, self.dem, options=gdal.TranslateOptions(options=['format'], format="XYZ"))
-
-        xyz = pn.read_csv(path_dest, header=None, sep=' ').values
+        
+        b = self.dem.bounds
+        xr, yr = self.dem.res
+        X, Y = np.meshgrid(np.linspace(b.left, b.right, xr), np.linspace(b.top, b.bottom, yr))
+        xyz = np.hstack((X.ravel(), Y.ravel(), self.dem_zval))
         self.values_3D = xyz.reshape((*shape, 3), order='C')
-
         # This is for 3D going from xyz to ijk
         self.values_3D = self.values_3D.swapaxes(0, 1)
         self.values_3D = np.flip(self.values_3D, 1)
 
         return self.values_3D
-
-    def _resize(self, resx, resy):
-        raise NotImplementedError
-
-    def resample(self, new_xres, new_yres, save_path):
-        """
-        Decrease the pixel size of the raster.
-
-        Args:
-            new_xres (int): desired resolution in x-direction
-            new_yres (int): desired resolution in y-direction
-            save_path (str): filepath to where the output file should be stored
-
-        Returns: Nothing, it writes a raster file with decreased resolution.
-
-        """
-        props = self.dem.GetGeoTransform()
-        print('current pixel xsize:', props[1], 'current pixel ysize:', -props[-1])
-        options = gdal.WarpOptions(options=['tr'], xRes=new_xres, yRes=new_yres)
-        newfile = gdal.Warp(save_path, self.dem, options=options)
-        newprops = newfile.GetGeoTransform()
-        print('new pixel xsize:', newprops[1], 'new pixel ysize:', -newprops[-1])
-        print('file saved in ' + save_path)
 
     def _get_cornerpoints(self, extent):
         """Get the coordinates of the bounding box.
@@ -201,9 +159,8 @@ class LoadDEMArtificial:
 
         if d_z is None:
             self.d_z = np.array(
-                [self.extent[5] - (self.extent[5] - self.extent[4]) * 1 / 5,
-                 self.extent[5]])
-            print(self.d_z)
+                [self.extent[5] - (self.extent[5] - self.extent[4]) * 1 / 5, self.extent[5]])
+            logger.info(self.d_z)
         else:
             self.d_z = d_z
 
