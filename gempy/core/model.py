@@ -997,12 +997,20 @@ class ImplicitCoKriging(object):
 
         """
 
-        coord_x_name = kwargs.get('coord_x_name') if 'coord_x_name' in kwargs \
-            else self._check_possible_column_names(table, ['X', 'x'])
-        coord_y_name = kwargs.get('coord_y_name') if 'coord_y_name' in kwargs \
-            else self._check_possible_column_names(table, ['Y', 'y'])
-        coord_z_name = kwargs.get('coord_z_name') if 'coord_z_name' in kwargs \
-            else self._check_possible_column_names(table, ['Z', 'z'])
+        try:
+            coord_x_name = kwargs.get('coord_x_name') if 'coord_x_name' in kwargs \
+                else self._check_possible_column_names(table, ['X', 'x'])
+            coord_y_name = kwargs.get('coord_y_name') if 'coord_y_name' in kwargs \
+                else self._check_possible_column_names(table, ['Y', 'y'])
+        except IndexError:
+            raise ValueError('X and Y coordinates columns/values missing')
+
+        try:
+            coord_z_name = kwargs.get('coord_z_name') if 'coord_z_name' in kwargs \
+                else self._check_possible_column_names(table, ['Z', 'z'])
+        except IndexError:
+            raise ValueError('Z coordinates column/values missing')
+        
         surface_name = kwargs.get('surface_name') if 'surface_name' in kwargs \
             else self._check_possible_column_names(table,
                                                    ['surface', 'Surface', 'surfaces',
