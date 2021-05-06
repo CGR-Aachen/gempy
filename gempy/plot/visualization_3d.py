@@ -15,7 +15,7 @@
     along with gempy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Module with classes and methods to visualized structural geology data and potential fields of the regional modelling based on
+Module with classes and methods to visualize structural geology data and potential fields of the regional modelling based on
 the potential field method.
 Tested on Ubuntu 14
 

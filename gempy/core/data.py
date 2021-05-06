@@ -27,14 +27,14 @@ pn.options.mode.chained_assignment = None
 class MetaData(object):
     """Class containing metadata of the project.
 
-    Set of attributes and methods that are not related directly with the geological model but more with the project
+    Set of attributes and methods that are not related directly to the geological model but more with the project
 
     Args:
-        project_name (str): Name of the project. This is use as default value for some I/O actions
+        project_name (str): Name of the project. This is used as the default value for some I/O actions
 
     Attributes:
-        date (str): Time of the creations of the project
-        project_name (str): Name of the project. This is use as default value for some I/O actions
+        date (str): Time of the creation of the project
+        project_name (str): Name of the project. This is used as the default value for some I/O actions
 
     """
 
@@ -53,9 +53,9 @@ class MetaData(object):
 class Grid(object):
     """ Class to generate grids.
 
-    This class is used to create points where to
-    evaluate the geological model. This class serves a container which transmit the XYZ coordinates to the
-    interpolator. There are several type of grids objects will feed into the Grid class
+    This class is used to create points usede to
+    evaluate the geological model. This class serves a container which transmits the XYZ coordinates to the
+    interpolator. There are several type of grid objects feeding into the Grid class
 
     Args:
          **kwargs: See below
@@ -68,14 +68,14 @@ class Grid(object):
          gravity (:class:`gempy.core.grid_modules.grid_types.Gravity`):
 
     Attributes:
-        values (np.ndarray): coordinates where the model is going to be evaluated. This are the coordinates
+        values (np.ndarray): coordinates where the model is going to be evaluated. This is the coordinates
          concatenation of all active grids.
         values_r (np.ndarray): rescaled coordinates where the model is going to be evaluated
         length (np.ndarray):I a array which contain the slicing index for each grid type in order. The first element will
          be 0, the second the length of the regular grid; the third custom and so on. This can be used to slice the
          solutions correspondent to each of the grids
         grid_types(np.ndarray[str]): names of the current grids of GemPy
-        active_grids(np.ndarray[bool]): boolean array which control which type of grid is going to be computed and
+        active_grids(np.ndarray[bool]): boolean array which controls which type of grid is going to be computed and
          hence on the property `values`.
         regular_grid (:class:`gempy.core.grid_modules.grid_types.RegularGrid`)
         custom_grid (:class:`gempy.core.grid_modules.grid_types.CustomGrid`)
@@ -442,7 +442,7 @@ class Surfaces(object):
         properties names (list or np.ndarray): list containing the names of each properties
 
     Attributes:
-        df (:class:`pn.core.frame.DataFrames`): Pandas data frame containing the surfaces names mapped to series and
+        df (:class:`pn.core.frame.DataFrames`): Pandas data frame containing the surface names mapped to series and
             the value used for each voxel in the final model.
         series (:class:`Series`)
         colors (:class:`Colors`)
@@ -717,7 +717,7 @@ class Surfaces(object):
     # set_series
     def map_series(self, mapping_object: Union[dict, pn.DataFrame] = None):
         """
-        Method to map to which series every surface belongs to. This step is necessary to assign differenct tectonics
+        Method to map which series every surface belongs to. This step is necessary to assign differenct tectonics
         such as unconformities or faults.
 
 
@@ -725,7 +725,7 @@ class Surfaces(object):
             mapping_object (dict, :class:`pn.DataFrame`):
                 * dict: keys are the series and values the surfaces belonging to that series
 
-                * pn.DataFrame: Dataframe with surfaces as index and a column series with the correspondent series name
+                * pn.DataFrame: Dataframe with surfaces as index and a column series with the corresponding series name
                   of each surface
 
         Returns:
@@ -737,7 +737,7 @@ class Surfaces(object):
         self.df['series'].cat.set_categories(self.series.df.index, inplace=True)
         # TODO Fixing this. It is overriding the formations already mapped
         if mapping_object is not None:
-            # If none is passed and series exist we will take the name of the first series as a default
+            # If none is passed and series exists we will take the name of the first series as a default
 
             if type(mapping_object) is dict:
 
@@ -787,7 +787,7 @@ class Surfaces(object):
         Args:
             values_array (np.ndarray, list): array-like of the same length as number of surfaces. This functionality
              can be used to assign different geophysical properties to each layer
-            properties_names (list): list of names for each values_array columns. This must be of same size as
+            properties_names (list): list of names for each values_array columns. This must be of the same size as
              values_array axis 1. By default properties will take the column name: 'value_X'.
 
         Returns:
@@ -868,7 +868,7 @@ class Surfaces(object):
 # @_setdoc_pro([SurfacePoints.__doc__, Orientations.__doc__, Surfaces.__doc__, Faults.__doc__])
 class Structure(object):
     """
-    The structure_data class analyse the different lengths of subset in the interface and orientations categories_df
+    The structure_data class analyses the different lengths of subset in the interface and orientations categories_df
     to pass them to the theano function.
 
     Attributes:
@@ -933,7 +933,7 @@ class Structure(object):
 
     def set_length_surfaces_i(self):
         """
-        Set the length of each **surface** on `SurfacePoints` i.e. how many data points are for each surface
+        Set the length of each **surface** on `SurfacePoints` i.e. how many data points are related to each surface
 
         Returns:
             :class:`pn.DataFrame`: df where Structural data is stored
@@ -952,7 +952,7 @@ class Structure(object):
 
     def set_series_and_length_series_i(self):
         """
-        Set the length of each **series** on `SurfacePoints` i.e. how many data points are for each series. Also
+        Set the length of each **series** on `SurfacePoints` i.e. how many data points are related to each series. Also
         sets the number of series itself.
 
         Returns:
@@ -975,10 +975,10 @@ class Structure(object):
 
     def set_length_series_o(self):
         """
-        Set the length of each **series** on `Orientations` i.e. how many orientations are for each series.
+        Set the length of each **series** on `Orientations` i.e. how many orientations are related to each series.
 
         Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
+            :class:`pn.DataFrame`: df where the Structural data is stored
 
         """
         # Array containing the size of every series. orientations.
@@ -996,7 +996,7 @@ class Structure(object):
         Set number of surfaces for each series
 
         Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
+            :class:`pn.DataFrame`: df where the Structural data is stored
 
         """
         len_sps = np.zeros(self.surfaces.series.df.shape[0], dtype=int)
@@ -1013,7 +1013,7 @@ class Structure(object):
         Set number of faults series. This method in gempy v2 is simply informative
 
         Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
+            :class:`pn.DataFrame`: df where the Structural data is stored
 
         """
         # Number of faults existing in the surface_points df
@@ -1025,7 +1025,7 @@ class Structure(object):
         Set the number of total surfaces
 
         Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
+            :class:`pn.DataFrame`: df where the Structural data is stored
 
         """
         # Number of surfaces existing in the surface_points df
@@ -1035,7 +1035,7 @@ class Structure(object):
 
     def set_is_lith_is_fault(self):
         """
-        Check if there is lithologies in the data and/or df. This method in gempy v2 is simply informative
+        Check if there are lithologies in the data and/or df. This method in gempy v2 is simply informative
 
         Returns:
             :class:`pn.DataFrame`: df where Structural data is stored
