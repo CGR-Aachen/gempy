@@ -19,4 +19,4 @@ welly
 sklearn
 
 # Subsurface
-subsurface
+subsurface==0.1.1
