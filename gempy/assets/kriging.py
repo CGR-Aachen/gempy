@@ -19,6 +19,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from copy import deepcopy
 
+
 class domain(object):
 
     def __init__(self, model, domain=None, data=None, set_mean=None):
@@ -89,10 +90,20 @@ class variogram_model(object):
 
     # class containing all the variogram functionality
 
-    def __init__(self, theoretical_model=None, range_=1, sill=1, nugget=0):
+    def __init__(self, theoretical_model='exponential', range_=1, sill=1, nugget=0):
+        """
+        generate a variogram model object which can be used to pass to the krigin
+        interpolator objects as well as calculate the variogram curves as a
+        function of the distance.
 
-        if theoretical_model is None:
-            theoretical_model = 'exponential'
+        The distance is named 'h' here.
+
+        :param theoretical_model [str]: either 'exponential', 'gaussian' or 'spherical'
+        :param range_: the range in h this variogram should have
+        :param sill: the sill (variance of the data) to give the model
+        :param nugget: the nugget (value for gamma at h first value > 0)
+        """
+
         self.theoretical_model = theoretical_model
 
         # default
@@ -101,7 +112,13 @@ class variogram_model(object):
         self.nugget = nugget
 
     def calculate_semivariance(self, d):
+        """
+        calculates the semivariance at distance d.
+        see methods ending with '_variogram_model' for specific info
 
+        :param d: distance (h) to calculate the semivariance for
+        :return: gamma the semivariance
+        """
         if self.theoretical_model == 'exponential':
             gamma = self.exponential_variogram_model(d)
         elif self.theoretical_model == 'gaussian':
@@ -109,11 +126,17 @@ class variogram_model(object):
         elif self.theoretical_model == 'spherical':
             gamma = self.spherical_variogram_model(d)
         else:
-            print('theoretical varigoram model not understood')
+            raise KeyError('theoretical varigoram model not understood')
         return gamma
 
     def calculate_covariance(self, d):
+        """
+        calculates the covariance at distance d.
+        see methods ending with 'e_covariance_model' for specific info
 
+        :param d: distance (h) to calculate the covariance for
+        :return: gamma the covariance
+        """
         if self.theoretical_model == 'exponential':
             gamma = self.exponential_covariance_model(d)
         elif self.theoretical_model == 'gaussian':
@@ -121,19 +144,34 @@ class variogram_model(object):
         elif self.theoretical_model == 'spherical':
             gamma = self.spherical_covariance_model(d)
         else:
-            print('theoretical varigoram model not understood')
+            raise KeyError('theoretical varigoram model not understood')
         return gamma
 
     # TODO: Add more options
     # seems better now by changing psill in covariance model
     def exponential_variogram_model(self, d):
-        '''Exponential variogram model, effective range approximately 3r, valid in R3'''
+        """
+        Exponential variogram model, effective range approximately 3r, valid in R3
+        implemented as:
+            psill = self.sill - self.nugget
+            gamma = psill * (1. - np.exp(-(np.absolute(d) / (self.range_)))) + self.nugget
+
+        :param d: distance (h) to calculate at
+        :return: gamma the semivariance
+        """
         psill = self.sill - self.nugget
         gamma = psill * (1. - np.exp(-(np.absolute(d) / (self.range_)))) + self.nugget
         return gamma
 
     def exponential_covariance_model(self, d):
-        '''Exponential covariance model, effective range approximately 3r, valid in R3'''
+        """
+        Exponential covariance model, effective range approximately 3r, valid in R3
+        implemented as:
+            psill = self.sill - self.nugget
+            cov = psill * (np.exp(-(np.absolute(d) / (self.range_))))
+        :param d: distance (h) to calculate at
+        :return: cov the covariance
+        """
         psill = self.sill - self.nugget
         cov = psill * (np.exp(-(np.absolute(d) / (self.range_))))
         return cov
@@ -178,7 +216,12 @@ class variogram_model(object):
     # option for covariance
     # display range, sill, nugget, practical range etc.
     def plot(self, type_='variogram', show_parameters=True):
+        """
+        make a plot of this model using matplotlib
 
+        :param type_[str]: 'variogram', 'covariance', 'both'
+        :param show_parameters: bool whether or not to make a textbox with the parameters
+        """
         if show_parameters == True:
             plt.axhline(self.sill, color='black', lw=1)
             plt.text(self.range_*2, self.sill, 'sill', fontsize=12, va='center', ha='center', backgroundcolor='w')
@@ -225,20 +268,20 @@ class field_solution(object):
     def plot_results(self, geo_data, prop='val', direction='y', result='interpolation', cell_number=0, contour=False,
                      cmap='viridis', alpha=0, legend=False, interpolation='nearest', show_data=True):
         """
-        TODO WRITE DOCSTRING
-        Args:
-            geo_data:
-            prop: property that should be plotted - "val", "var" or "both"
-            direction: x, y or z
-            cell_number:
-            contour:
-            cmap:
-            alpha:
-            legend:
 
-        Returns:
-
+        :param geo_data: [gempy.core.model.Model] the geological model to plot the data into
+        :param prop: property that should be plotted - "val", "var" or "both"
+        :param direction: [str]x, y or z for the direction which is to be sliced
+        :param result: NOT USED
+        :param cell_number: the slice (data point number in the 3D-grid) to plot as 2D plane
+        :param contour: [bool] if True use matpplotbib contourf if False use imshow
+        :param cmap: [str] the colormap to use. This value is passed to the matplotlib.cm.get_cmap function
+        :param alpha: the alpha value (transperency) for the colormap
+        :param legend: [bool] if True adds a colorbar to the plot
+        :param interpolation: [str] the interpolation parameter string to pass to the 2D plotting function
+        :param show_data: if True the datapoints will be plotted using scatter
         """
+
         a = np.full_like(self.domain.mask, np.nan, dtype=np.double) #array like lith_block but with nan if outside domain
 
         est_vals = self.results_df['estimated value'].values
@@ -254,7 +297,7 @@ class field_solution(object):
             b = np.full_like(self.domain.mask, np.nan, dtype=np.double)
             b[np.where(self.domain.mask == True)] = est_var
         else:
-            print('prop must be val var or both')
+            raise KeyError('prop must be "val", "var" or "both"')
 
         #create plot object
         p = _visualization_2d.PlotSolution(geo_data)
@@ -298,15 +341,22 @@ class field_solution(object):
             helpers.add_colorbar(im2, label='variance[]')
             plt.tight_layout()
 
+
 # TODO: check with new ordianry kriging and nugget effect
-def simple_kriging(a, b, prop, var_mod, inp_mean):
+def simple_kriging(a, b, prop, var_mod, inp_mean, method='solve'):
     '''
     Method for simple kriging calculation.
+    If the matrix is not of full rank use 'lstsq' for the method parameter to force usage of LAPAK's dgelsd function,
+    which uses Singular Value decomposition. If you are not sure, use 'smart' to calculate if the matrix has full rank
+    before trying to solve (WARNING! 'smart' option will have significantly increased computational cost!).
+
     Args:
         a (np.array): distance matrix containing all distances between target point and moving neighbourhood
         b (np.array): distance matrix containing all inter-point distances between locations in moving neighbourhood
         prop (np.array): array containing scalar property values of locations in moving neighbourhood
         var_mod: variogram model object
+        inp_mean:
+        method: (str): 'solve' to use numpy.linalg.solve, 'lstsq' for numpy.linalg.lstsq, or 'smart' (see above)
     Returns:
         result (float?): single scalar property value estimated for target location
         std_ok (float?): single scalar variance value for estimate at target location
@@ -316,7 +366,6 @@ def simple_kriging(a, b, prop, var_mod, inp_mean):
     shape = len(a)
     C = np.zeros((shape, shape))
     c = np.zeros((shape))
-    w = np.zeros((shape))
 
     # Filling matrices with covariances based on calculated distances
     C[:shape, :shape] = var_mod.calculate_covariance(b) #? cov or semiv
@@ -325,9 +374,20 @@ def simple_kriging(a, b, prop, var_mod, inp_mean):
     # nugget effect for simple kriging - dont remember why i set this actively, should be the same
     #np.fill_diagonal(C, self.sill)
 
-    # TODO: find way to check quality of matrix and solutions for instability
     # Solve Kriging equations
-    w = np.linalg.solve(C, c)
+    if method == 'solve':
+        w = np.linalg.solve(C, c)
+    elif method == 'lstsq':
+        w = np.linalg.lstsq(C, c)
+    elif method == 'smart':
+        # this is computationally expensive for big systems
+        if np.linalg.matrix_rank(C) != C.shape[1]:
+            w = np.linalg.lstsq(C, c)
+        else:
+            w = np.linalg.solve(C, c)
+    else:
+        raise AttributeError('method parameter is not recognized: see function hints for supported methods')
+
 
     # calculating estimate and variance for kriging
     pred_var = var_mod.sill - np.sum(w * c)
@@ -336,14 +396,21 @@ def simple_kriging(a, b, prop, var_mod, inp_mean):
 
     return result, pred_var
 
-def ordinary_kriging(a, b, prop, var_mod):
+
+def ordinary_kriging(a, b, prop, var_mod, method='solve'):
     '''
     Method for ordinary kriging calculation.
+    If the matrix is not of full rank use 'lstsq' for the method parameter to force usage of LAPAK's dgelsd function,
+    which uses Singular Value decomposition. If you are not sure, use 'smart' to calculate if the matrix has full rank
+    before trying to solve (WARNING! 'smart' option will have significantly increased computational cost!).
+
+
     Args:
         a (np.array): distance matrix containing all distances between target point and moving neighbourhood
         b (np.array): distance matrix containing all inter-point distances between locations in moving neighbourhood
         prop (np.array): array containing scalar property values of locations in moving neighbourhood
         var_mod: variogram model object
+        method: (str): 'solve' to use numpy.linalg.solve, 'lstsq' for numpy.linalg.lstsq, or 'smart' (see above)
     Returns:
         result (float?): single scalar property value estimated for target location
         std_ok (float?): single scalar variance value for estimate at target location
@@ -353,9 +420,8 @@ def ordinary_kriging(a, b, prop, var_mod):
     shape = len(a)
     C = np.zeros((shape + 1, shape + 1))
     c = np.zeros((shape + 1))
-    w = np.zeros((shape + 1))
 
-    # filling matirces based on model for spatial correlation
+    # filling matrices based on model for spatial correlation
     C[:shape, :shape] = var_mod.calculate_semivariance(b)
     c[:shape] = var_mod.calculate_semivariance(a)
 
@@ -370,9 +436,19 @@ def ordinary_kriging(a, b, prop, var_mod):
     # but be aware that it strictly forces estimates to go through data points
     # c[c == self.nugget] = 0
 
-    # TODO: find way to check quality of matrix and solutions for instability
     # Solve Kriging equations
-    w = np.linalg.solve(C, c)
+    if method == 'solve':
+        w = np.linalg.solve(C, c)
+    elif method == 'lstsq':
+        w = np.linalg.lstsq(C, c)
+    elif method == 'smart':
+        # this is computationally expensive for big systems
+        if np.linalg.matrix_rank(C) != C.shape[1]:
+            w = np.linalg.lstsq(C, c)
+        else:
+            w = np.linalg.solve(C, c)
+    else:
+        raise KeyError('method parameter is not recognized: see function hints for supported methods')
 
     # calculating estimate and variance for kriging
     pred_var = w[shape] + np.sum(w[:shape] * c[:shape])
@@ -380,11 +456,19 @@ def ordinary_kriging(a, b, prop, var_mod):
 
     return result, pred_var
 
+
 def create_kriged_field(domain, variogram_model, distance_type='euclidian',
-                        moving_neighbourhood='all', kriging_type='OK', n_closest_points=20):
+                        moving_neighbourhood='all', kriging_type='OK', n_closest_points=20, method='solve'):
     '''
     Method to create a kriged field over the defined grid of the gempy solution depending on the defined
     input data (conditioning).
+    :param domain: domain model where domain.data and domain.ip_mean must be define
+    :param variogram_model: the variogram model to pass to the kriging function
+    :param distance_type: 'euclidian' is the only valid option
+    :param moving_neighbourhood: 'all', 'n_closest' or 'range'
+    :param kriging_type: 'OK' for Ordinary Kriging, 'SK' for Simple Kriging
+    :param n_closest_points: number of points to use if 'n_closest' is set for moving_neighbourhood
+    :param method: 'solve' to use numpy.linalg.solve, 'lstsq' for numpy.linalg.lstsq, or 'smart' (see above)
     Returns:
         self.results_df (pandas dataframe):   Dataframe containing coordinates, kriging estimate
                                                     and kriging variance for each grid point
@@ -430,17 +514,17 @@ def create_kriged_field(domain, variogram_model, distance_type='euclidian',
             b = dist_all_to_all[np.ix_(aux, aux)]
 
         else:
-            print("FATAL ERROR: Moving neighbourhood not understood")
+            raise KeyError("Moving neighbourhood not understood")
 
         # STEP 2: Multiple if elif conditions to calculate kriging at point
         if kriging_type == 'OK':
-            val, var = ordinary_kriging(a, b, prop, variogram_model)
+            val, var = ordinary_kriging(a, b, prop, variogram_model, method=method)
         elif kriging_type == 'SK':
-            val, var = simple_kriging(a, b, prop, variogram_model, domain.inp_mean)
+            val, var = simple_kriging(a, b, prop, variogram_model, domain.inp_mean, method=method)
         elif kriging_type == 'UK':
-            print("Universal Kriging not implemented")
+            raise KeyError("Universal Kriging not implemented")
         else:
-            print("FATAL ERROR: Kriging type not understood")
+            raise KeyError("Kriging type not understood")
 
         # STEP 3: Save results
         kriging_result_vals[i] = val
@@ -454,11 +538,18 @@ def create_kriged_field(domain, variogram_model, distance_type='euclidian',
 
     return field_solution(domain, variogram_model, results_df, field_type='interpolation')
 
+
 def create_gaussian_field(domain, variogram_model, distance_type='euclidian',
-                        moving_neighbourhood='all', kriging_type='OK', n_closest_points=20):
+                        moving_neighbourhood='all', kriging_type='OK', n_closest_points=20, method='solve'):
     '''
     Method to create a kriged field over the defined grid of the gempy solution depending on the defined
     input data (conditioning).
+    :param domain: domain model where domain.data, krig_grid and domain.ip_mean must be define
+    :param variogram_model: the variogram model to pass to the kriging function
+    :param distance_type: 'euclidian' is the only valid option
+    :param moving_neighbourhood: 'all', 'n_closest' or 'range'
+    :param kriging_type: 'OK' for Ordinary Kriging, 'SK' for Simple Kriging
+    :param method: 'solve' to use numpy.linalg.solve, 'lstsq' for numpy.linalg.lstsq, or 'smart' (see above)
     Returns:
         self.results_df (pandas dataframe):   Dataframe containing coordinates, kriging estimate
                                                         and kriging variance for each grid point
@@ -484,6 +575,8 @@ def create_gaussian_field(domain, variogram_model, distance_type='euclidian',
     if distance_type == 'euclidian':
         # calculate distances between all input data points
         dist_all_to_all = cdist(sgs_locations, sgs_locations)
+    else:
+        raise KeyError('distance_type not understood')
 
     # set counter og active data (start=input data, grwoing by 1 newly calcualted point each run)
     active_data = len(sgs_prop_updating)
@@ -532,18 +625,18 @@ def create_gaussian_field(domain, variogram_model, distance_type='euclidian',
             b = active_distance_matrix[np.ix_(aux, aux)]
 
         else:
-            print("FATAL ERROR: Moving neighbourhood not understood")
+            raise KeyError("Moving neighbourhood not understood")
 
         # STEP 3: Multiple if elif conditions to calculate kriging at point
         # TODO: Cover case of data location and grid point coinciding
         if kriging_type == 'OK':
-            val, var = ordinary_kriging(a, b, prop, variogram_model)
+            val, var = ordinary_kriging(a, b, prop, variogram_model, method=method)
         elif kriging_type == 'SK':
-            val, var = simple_kriging(a, b, prop, variogram_model, domain.inp_mean)
+            val, var = simple_kriging(a, b, prop, variogram_model, domain.inp_mean, method=method)
         elif kriging_type == 'UK':
-            print("Universal Kriging not implemented")
+            NotImplementedError("Universal Kriging not implemented")
         else:
-            print("FATAL ERROR: Kriging type not understood")
+            raise KeyError("Kriging type not understood")
 
         # STEP 4: Draw from random distribution
         std_ = np.sqrt(var)
