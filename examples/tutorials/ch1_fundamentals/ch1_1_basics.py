@@ -33,7 +33,7 @@ pd.set_option('precision', 2)
 #     -  Additional data
 #     -  Faults
 #
-# We will see each of this class in further detail in the future.
+# We will see each of these classes in further detail in the future.
 # 
 # Most of data can also be generated from raw data that comes in the form
 # of CSV-files (CSV = comma-separated values). Such files might be
@@ -42,13 +42,13 @@ pd.set_option('precision', 2)
 # Microsoft Excel or LibreOffice Calc.
 # 
 # In this tutorial, all input data is created by importing such CSV-files.
-# These exemplary files can be found in the ``input_data`` folder in the
+# These example files can be found in the ``input_data`` folder in the
 # root folder of GemPy. The data comprises :math:`x`-, :math:`y`- and
 # :math:`z`-positional values for all surface points and orientation
 # measurements. For the latter, poles, azimuth and polarity are
 # additionally included. Surface points are furthermore assigned a
 # formation. This might be a lithological unit such as "Sandstone" or a
-# structural feature such as "Main Fault". It is decisive to remember
+# structural feature such as "Main Fault". It is important to remember
 # that, in GemPy, interface position points mark the **bottom** of a
 # layer. If such points are needed to resemble a top of a formation (e.g.
 # when modeling an intrusion), this can be achieved by defining a
@@ -119,13 +119,13 @@ gp.get_data(geo_model, 'orientations').head()
 # 
 # You can assign several surfaces to one series. The order of the units
 # within such as series is only relevant for the color code, thus we
-# recommend to be consistent. You can define this order via another
+# recommend being consistent. You can define this order via another
 # attribute "``order_formations``/ " or by using the specific command
 # ``set_order_formations``. (If the order of the pile differs from the
 # final result the color of the interfaces and input data will be
 # different.)
 # 
-# Every fault is treated as an independent series and have to be at set at
+# Every fault is treated as an independent series and has to be at set at
 # the **top of the pile**. The relative order between the distinct faults
 # defines the tectonic relation between them (first entry is the
 # youngest).
@@ -189,7 +189,7 @@ geo_model.faults.faults_relations_df
 # Our model input data, here named "*geo\_model*", contains all the
 # information that is essential for the construction of our model. You can
 # access different types of information by using ``gp.get_data`` or simply
-# by accessiong the atrribues.
+# by accessiong the atrributes.
 # 
 # We can, for example, return the coordinates of our modeling grid via:
 # 
@@ -283,7 +283,7 @@ gp.set_interpolator(geo_model,
 
 # %%
 # This function rescales the extent and coordinates of the original data
-# (and store it in the attribute ``geo_data_res`` which behaves as a usual
+# (and stores it in the attribute ``geo_data_res`` which behaves as a usual
 # ``InputData`` object) and adds mathematical parameters that are needed
 # for conducting the interpolation. The computation of this step may take
 # a while, as it also compiles a theano function which is required for the
@@ -291,7 +291,7 @@ gp.set_interpolator(geo_model,
 # declaring ``compile_theano = False`` in the function.
 # 
 # Furthermore, this preparation process includes an assignment of numbers
-# to each formation. Note that GemPy's always creates a default basement
+# to each formation. Note that GemPy always creates a default basement
 # formation as the last formation number. Afterwards, numbers are
 # allocated from youngest to oldest as defined by the sequence of series
 # and formations. On the property ``formations`` on our interpolation
@@ -315,7 +315,7 @@ gp.get_data(geo_model, 'kriging')
 # ``compute_model``. By default, this will return two separate solutions
 # in the form of arrays. The first gives information on the lithological
 # formations, the second on the fault network in the model. These arrays
-# consist of two subarrays as entries each:
+# consist of two subarrays as entries described here:
 # 
 # 1. Lithology block model solution:
 # 

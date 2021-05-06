@@ -121,7 +121,7 @@ Here, we provide advice that should use in most cases (but certainly not all):
 
     ``$ conda install theano``
 
-    If the installation fails at some point try to re-install anaconda for a single user (no administrator priveleges)
+    If the installation fails at some point try to re-install anaconda for a single user (no administrator privileges)
     and with the Path Environment set.
     To use Theano with ``numpy version 1.16.0`` or following, it has to be updated to ``Theano 1.0.4`` using
 
