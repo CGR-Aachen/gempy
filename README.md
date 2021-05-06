@@ -58,9 +58,9 @@ Follow these [guidelines](https://github.com/cgre-aachen/gempy/blob/WIP_readme-u
 
 ## Publications using GemPy
 
-* Güdük, N., de la Varga, M. Kaukolinna, J. and Wellmann, F. (in review). Model-Based Probabilistic Inversion Using Magnetic Data: A Case Study on the Kevitsa Deposit.
-* Schaaf, A., de la Varga, M., Wellmann, F., & Bond, C. E. (2020). [Constraining stochastic 3-D structural geological models with topology information using Approximate Bayesian Computation using GemPy 2.1](https://gmd.copernicus.org/preprints/gmd-2020-136/gmd-2020-136.pdf). Geoscientific Model Development Discussions, 1-24.
-* Stamm, F. A., de la Varga, M., and Wellmann, F. (2019). [Actors, actions, and uncertainties: optimizing decision-making based on 3-D structural geological models](https://se.copernicus.org/articles/10/2015/2019/se-10-2015-2019.html), Solid Earth, 10, 2015–2043.
+* Güdük, N.; de la Varga, M.; Kaukolinna, J.; Wellmann, F. (2021). [Model-Based Probabilistic Inversion Using Magnetic Data: A Case Study on the Kevitsa Deposit](https://doi.org/10.3390/geosciences11040150). Geosciences, 11, 150. https://doi.org/10.3390/geosciences11040150 (open access).
+* Schaaf, A., de la Varga, M., Wellmann, F., & Bond, C. E. (2020). [Constraining stochastic 3-D structural geological models with topology information using Approximate Bayesian Computation using GemPy 2.1](https://gmd.copernicus.org/preprints/gmd-2020-136/gmd-2020-136.pdf). Geoscientific Model Development Discussions, 1-24 (open access).
+* Stamm, F. A., de la Varga, M., and Wellmann, F. (2019). [Actors, actions, and uncertainties: optimizing decision-making based on 3-D structural geological models](https://se.copernicus.org/articles/10/2015/2019/se-10-2015-2019.html), Solid Earth, 10, 2015–2043 (open access).
 * Wellmann, F., Schaaf, A., de la Varga, M., & von Hagke, C. (2019). [From Google Earth to 3D Geology Problem 2: Seeing Below the Surface of the Digital Earth](
 https://www.sciencedirect.com/science/article/pii/B9780128140482000156).
 In Developments in Structural Geology and Tectonics (Vol. 5, pp. 189-204). Elsevier.
