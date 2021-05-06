@@ -373,7 +373,7 @@ class CenteredGrid:
             radius = np.repeat(radius, 3)
 
         g_ = []
-        g_2 = []
+        g_2 = [] # contains exp coord, left right xy, top and bottom
         d_ = []
         for xyz in [0, 1, 2]:
 
@@ -382,16 +382,28 @@ class CenteredGrid:
 
                 g_.append(np.geomspace(0.01, 1, int(resolution[xyz])))
                 g_2.append(
-                    (np.concatenate(([0], g_[xyz])) + 0.05) * - radius[xyz] * 1.2)
+                    (np.concatenate(([0], g_[xyz])) + 0.01) * - radius[xyz])
             else:
                 g_.append(np.geomspace(0.01, 1, int(resolution[xyz] / 2)))
                 g_2.append(
                     np.concatenate((-g_[xyz][::-1], [0], g_[xyz])) * radius[xyz])
-            d_.append(np.diff(np.pad(g_2[xyz], 1, 'reflect', reflect_type='odd')))
-
-        g = np.meshgrid(*g_2)
-        d_left = np.meshgrid(d_[0][:-1] / 2, d_[1][:-1] / 2, d_[2][:-1] / 2)
-        d_right = np.meshgrid(d_[0][1:] / 2, d_[1][1:] / 2, d_[2][1:] / 2)
+        
+        #my modification below, change the left/right boundary to grow exponentally instead of the center point
+        
+        x_center = (g_2[0][:-1]+g_2[0][1:])/2 
+        y_center = (g_2[1][:-1]+g_2[1][1:])/2
+        z_center = (g_2[-1][:-1]+g_2[-1][1:])/2
+        g = np.meshgrid(x_center,y_center,z_center)
+        
+        d_left_x = np.abs(g_2[0][:-1] - x_center)
+        d_left_y = np.abs(g_2[1][:-1] - y_center)
+        d_right_x = np.abs(g_2[0][1:] - x_center)
+        d_right_y = np.abs(g_2[1][1:] - y_center)
+        d_z = z_center - g_2[-1][:-1]
+        
+        d_left = np.meshgrid(d_left_x,d_left_y,d_z)
+        d_right = np.meshgrid(d_right_x,d_right_y,d_z)
+    
         kernel_g = np.vstack(tuple(map(np.ravel, g))).T.astype("float64")
         kernel_d_left = np.vstack(tuple(map(np.ravel, d_left))).T.astype("float64")
         kernel_d_right = np.vstack(tuple(map(np.ravel, d_right))).T.astype("float64")

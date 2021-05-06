@@ -28,6 +28,9 @@ the forward gravity by simply operate:
 
 """
 
+#%%
+import sys, os
+sys.path.append("../../..")
 
 # %%
 
@@ -74,34 +77,37 @@ tz
 
 # %% 
 a, b, c = kernel_centers, kernel_dxyz_left, kernel_dxyz_right
-
+res = [10,10,20]
 # %% 
 fig = plt.figure(figsize=(13, 7))
-plt.quiver(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-           a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel(),
-           np.zeros(231),
-           tz.reshape(11, 11, 21)[5, :, :].ravel(), label='$t_z$', alpha=.3
+plt.quiver(a[:, 0].reshape(res)[5, :, :].ravel(),
+           a[:, 2].reshape(res)[:, 5, :].ravel(),
+           np.zeros(200),
+           tz.reshape(res)[5, :, :].ravel(), label='$t_z$', alpha=.3
            )
 
-plt.plot(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-         a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel(), 'o', alpha=.3, label='Centers')
+plt.plot(a[:, 0].reshape(res)[5, :, :].ravel(),
+         a[:, 2].reshape(res)[:, 5, :].ravel(), 'o', alpha=.3, label='Centers')
 
-plt.plot(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel() - b[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-         a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel(), '.', alpha=.3, label='Lefts')
+##
+plt.plot(a[:, 0].reshape(res)[5, :, :].ravel() - b[:, 0].reshape(res)[5, :, :].ravel(),
+         a[:, 2].reshape(res)[:, 5, :].ravel(), '.', alpha=.3, label='Lefts')
 
-plt.plot(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-         a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel() - b[:, 2].reshape(11, 11, 21)[:, 5, :].ravel(), '.', alpha=.6,
+plt.plot(a[:, 0].reshape(res)[5, :, :].ravel() + c[:, 0].reshape(res)[5, :, :].ravel(),
+         a[:, 2].reshape(res)[:, 5, :].ravel(), '.', alpha=.3, label='Rights')
+
+##
+
+plt.plot(a[:, 0].reshape(res)[5, :, :].ravel(),
+         a[:, 2].reshape(res)[:, 5, :].ravel() - b[:, 2].reshape(res)[:, 5, :].ravel(), '.', alpha=.6,
          label='Ups')
 
-plt.plot(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel() + c[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-         a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel(), '.', alpha=.3, label='Rights')
-
-plt.plot(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-         a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel() + c[:, 2].reshape(11, 11, 21)[5, :, :].ravel(), '.', alpha=.3,
+plt.plot(a[:, 0].reshape(res)[5, :, :].ravel(),
+         a[:, 2].reshape(res)[:, 5, :].ravel() + c[:, 2].reshape(res)[5, :, :].ravel(), '.', alpha=.3,
          label='Downs')
 
-plt.xlim(-200, 200)
-plt.ylim(-200, 0)
+plt.xlim(-120, 120)
+plt.ylim(-125, 0)
 plt.legend()
 plt.show()
 
@@ -111,10 +117,10 @@ plt.show()
 
 # %%
 fig = plt.figure(figsize=(13, 7))
-plt.quiver(a[:, 0].reshape(11, 11, 21)[5, :, :].ravel(),
-           a[:, 2].reshape(11, 11, 21)[:, 5, :].ravel(),
-           np.zeros(231),
-           tz.reshape(11, 11, 21)[5, :, :].ravel()
+plt.quiver(a[:, 0].reshape(res)[5, :, :].ravel(),
+           a[:, 2].reshape(res)[:, 5, :].ravel(),
+           np.zeros(200),
+           tz.reshape(res)[5, :, :].ravel()
            )
 plt.show()
 
