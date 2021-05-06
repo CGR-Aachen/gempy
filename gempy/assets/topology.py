@@ -53,6 +53,18 @@ def compute_topology(
         n_shift: int = 1,
         voxel_threshold: int = 1
 ):
+    """Compute topology of a GemPy model
+
+    Args:
+        geo_model (Project): GemPy model project
+        cell_number (int, optional): Cell number in chosen direction. Defaults to None.
+        direction (str, optional): one of the model's dimensions, x, y, or z. Defaults to None.
+        n_shift (int, optional): number of voxels the model is shifted and then substracted for finding interfaces. Defaults to 1.
+        voxel_threshold (int, optional): amount of voxels which have to be connected to be considered into the topology calculation. Defaults to 1.
+
+    Returns:
+        edges, centroids [numpy array]: edges and centroids of the topology graph
+    """
     res = geo_model._grid.regular_grid.resolution
     fb = _get_fb(geo_model)
     lb = _get_lb(geo_model)

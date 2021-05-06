@@ -3,6 +3,7 @@ from matplotlib.cm import ScalarMappable as SM
 from gempy.plot._visualization_2d import PlotData2D
 import numpy as np
 import os
+import itertools as it
 
 
 def export_geomap2geotiff(path, geo_model, geo_map=None, geotiff_filepath=None):
@@ -134,3 +135,143 @@ def export_moose_input(geo_model, path=None, filename='geo_model_units_moose_inp
     f.close()
     
     print("Successfully exported geological model as moose input to "+path)
+
+def export_shemat_suite_input_file(geo_model, path: str=None, filename: str='geo_model_SHEMAT_input'):
+    """
+    Method to export a 3D geological model as SHEMAT-Suite input-file for a conductive HT-simulation. 
+
+    Args:
+        path (str): Filepath for the exported input file (default './')
+        filename (str): name of exported input file (default 'geo_model_SHEMAT_input')
+    """
+    # get model dimensions
+    nx, ny, nz = geo_model.grid.regular_grid.resolution
+    xmin, xmax, ymin, ymax, zmin, zmax = geo_model.solutions.grid.regular_grid.extent
+    
+    delx = (xmax - xmin)/nx
+    dely = (ymax - ymin)/ny
+    delz = (zmax - zmin)/nz
+    
+    # get unit IDs and restructure them
+    ids = np.round(geo_model.solutions.lith_block)
+    ids = ids.astype(int)
+    
+    liths = ids.reshape((nx, ny, nz))
+    liths = liths.flatten('F')
+
+    # group litho in space-saving way
+    sequence = [len(list(group)) for key, group in it.groupby(liths)]
+    unit_id = [key for key, group in it.groupby(liths)]
+    combined = ["%s*%s" % (pair) for pair in zip(sequence,unit_id)]
+
+    combined_string = " ".join(combined)
+
+    # get number of units and set units string
+    units = geo_model.surfaces.df[['surface', 'id']]
+    
+    unitstring = ""
+    for index, rows in units.iterrows():
+        unitstring += f"0.01d-10    1.d0  1.d0  1.e-14	 1.e-10  1.d0  1.d0  3.74	0.  2077074.  10  2e-3	!{rows['surface']} \n" 	
+
+    # input file as f-string
+    fstring = f"""!==========>>>>> INFO
+# Title
+{filename}
+
+# linfo
+1 2 1 1
+
+# runmode
+1
+
+# timestep control
+0
+1           1           0           0
+
+# tunit
+1
+ 
+# time periods, records=1
+0      60000000    200      lin
+           
+# output times, records=10
+1
+6000000
+12000000
+18000000
+24000000
+30000000
+36000000
+42000000
+48000000
+54000000
+    
+# file output: hdf vtk
+
+# active temp
+
+# PROPS=bas
+
+# USER=none
+
+
+# grid
+{nx} {ny} {nz}
+
+# delx
+{nx}*{delx}
+
+# dely
+{ny}*{dely}
+
+# delz
+{nz}*{delz}
+
+!==========>>>>> NONLINEAR SOLVER
+# nlsolve
+50 0
+
+!==========>>>>> FLOW
+# lsolvef (linear solver control)
+1.d-12 64 500
+# nliterf (nonlinear iteration control)
+1.0d-10 1.0
+
+!==========>>>>> TEMPERATURE
+# lsolvet (linear solver control)
+1.d-12 64 500
+# nlitert (nonlinear iteration control)
+1.0d-10 1.0
+
+!==========>>>>> INITIAL VALUES
+# temp init
+{nx*ny*nz}*15.0d0  
+
+# head init
+{nx*ny*nz}*7500
+
+!==========>>>>> UNIT DESCRIPTION
+!!
+# units
+{unitstring}
+
+!==========>>>>>   define boundary properties
+# temp bcd, simple=top, value=init
+
+# temp bcn, simple=base, error=ignore
+{nx*ny}*0.06
+
+# uindex
+{combined_string}"""
+
+    if not path:
+        path = './'
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    f = open(path+filename, 'w+')
+    
+    f.write(fstring)
+    f.close()
+    
+    print("Successfully exported geological model as SHEMAT-Suite input to "+path)        
