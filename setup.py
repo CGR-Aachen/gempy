@@ -20,6 +20,7 @@ setup(
         'scikit-image>=0.17',
         'pyvista>=0.25',
         'pyvistaqt',
+        'pyqt5',
         'iPython',
     ],
     url='https://github.com/cgre-aachen/gempy',

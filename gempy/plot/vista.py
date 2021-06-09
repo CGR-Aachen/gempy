@@ -33,7 +33,7 @@ from matplotlib import cm
 import numpy as np
 import pandas as pd
 import pyvista as pv
-from pyvista.plotting.theme import parse_color
+from pyvista.plotting import parse_color
 # TODO Check if this is necessary if it is implemented in the API
 try:
     import pyvistaqt as pvqt

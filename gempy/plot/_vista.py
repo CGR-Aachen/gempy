@@ -36,7 +36,7 @@ import pandas as pn
 try:
     import pyvista as pv
     import pyvistaqt as pvqt
-    from pyvista.plotting.theme import parse_color
+    from pyvista.plotting import parse_color
     PYVISTA_IMPORT = True
 except ImportError:
     PYVISTA_IMPORT = False
